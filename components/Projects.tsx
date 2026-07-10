@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useEdit } from "@/context/EditContext";
 import { Editable } from "@/components/ui/Editable";
 import { EditSection } from "@/components/ui/EditSection";
+import { UrlInput } from "@/components/ui/UrlInput";
 
 export default function Projects() {
   const { data, isEditing, updateField, togglePin, removeProject } =
@@ -165,38 +166,12 @@ export default function Projects() {
                   {isEditing && (
                     <div className="mt-4 flex flex-col gap-1.5 max-w-sm">
                       <label className="flex items-center gap-3">
-                        <span className="text-[10px] text-muted uppercase tracking-wider w-10 shrink-0">
-                          Live
-                        </span>
-                        <input
-                          type="text"
-                          defaultValue={p.live}
-                          onBlur={(e) =>
-                            updateField(
-                              `projects.${originalIndex}.live`,
-                              e.target.value
-                            )
-                          }
-                          placeholder="https://..."
-                          className="text-xs bg-transparent border-b border-border focus:border-accent/60 outline-none text-text placeholder:text-muted/30 w-full pb-0.5 transition-colors"
-                        />
+                        <span className="text-[10px] text-muted uppercase tracking-wider w-10 shrink-0">Live</span>
+                        <UrlInput value={p.live} field={`projects.${originalIndex}.live`} />
                       </label>
                       <label className="flex items-center gap-3">
-                        <span className="text-[10px] text-muted uppercase tracking-wider w-10 shrink-0">
-                          Code
-                        </span>
-                        <input
-                          type="text"
-                          defaultValue={p.code}
-                          onBlur={(e) =>
-                            updateField(
-                              `projects.${originalIndex}.code`,
-                              e.target.value
-                            )
-                          }
-                          placeholder="https://..."
-                          className="text-xs bg-transparent border-b border-border focus:border-accent/60 outline-none text-text placeholder:text-muted/30 w-full pb-0.5 transition-colors"
-                        />
+                        <span className="text-[10px] text-muted uppercase tracking-wider w-10 shrink-0">Code</span>
+                        <UrlInput value={p.code} field={`projects.${originalIndex}.code`} />
                       </label>
                     </div>
                   )}

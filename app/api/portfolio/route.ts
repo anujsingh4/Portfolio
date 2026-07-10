@@ -22,7 +22,7 @@ export async function GET() {
     return NextResponse.json(null, { status: 404 });
   }
 
-  return NextResponse.json(data.data);
+  return NextResponse.json({ siteData: data.data, updatedAt: data.updated_at });
 }
 
 export async function PUT(req: NextRequest) {
