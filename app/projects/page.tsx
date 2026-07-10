@@ -8,7 +8,6 @@ import Navbar from "@/components/Navbar";
 import { useEdit } from "@/context/EditContext";
 import { Editable } from "@/components/ui/Editable";
 import { UrlInput } from "@/components/ui/UrlInput";
-import { ProjectThumbnail } from "@/components/ui/ProjectThumbnail";
 
 interface GhRepo {
   name: string;
@@ -228,7 +227,7 @@ export default function ProjectsPage() {
               onMouseLeave={() => !isEditing && setHovered(null)}
               className="border-b border-border py-8 group"
             >
-              <div className="flex items-start gap-4 md:gap-8">
+              <div className="flex items-start gap-6 md:gap-10">
                 <span className={`text-xs font-mono pt-1.5 shrink-0 w-6 transition-colors duration-300 ${
                   p.pinned ? "text-accent" : hovered === p.id ? "text-accent" : "text-muted"
                 }`}>
@@ -308,10 +307,6 @@ export default function ProjectsPage() {
                     </div>
                   )}
                 </div>
-
-                {!isEditing && (
-                  <ProjectThumbnail live={p.live} code={p.code} />
-                )}
               </div>
             </motion.div>
           ))}
