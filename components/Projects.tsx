@@ -8,6 +8,7 @@ import { useEdit } from "@/context/EditContext";
 import { Editable } from "@/components/ui/Editable";
 import { EditSection } from "@/components/ui/EditSection";
 import { UrlInput } from "@/components/ui/UrlInput";
+import { ProjectThumbnail } from "@/components/ui/ProjectThumbnail";
 
 export default function Projects() {
   const { data, isEditing, updateField, togglePin, removeProject } =
@@ -63,7 +64,7 @@ export default function Projects() {
               onMouseLeave={() => !isEditing && setHovered(null)}
               className="border-b border-border py-8"
             >
-              <div className="flex items-start gap-6 md:gap-10">
+              <div className="flex items-start gap-4 md:gap-8">
                 {/* Number */}
                 <span
                   className={`text-xs font-medium pt-1 shrink-0 transition-colors duration-300 ${
@@ -176,6 +177,10 @@ export default function Projects() {
                     </div>
                   )}
                 </div>
+
+                {!isEditing && (
+                  <ProjectThumbnail live={p.live} code={p.code} />
+                )}
               </div>
             </motion.div>
           );
