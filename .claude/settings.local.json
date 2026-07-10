@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "Bash(echo \"Server PID: $!\")",
+      "Bash(pkill -f \"next dev\")",
+      "Bash(echo \"PID: $!\")",
+      "Bash(node *)",
+      "Bash(npx tsc *)",
+      "Bash(npx next *)"
+    ]
+  }
+}
