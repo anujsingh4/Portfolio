@@ -9,7 +9,8 @@ interface Props {
 
 export function ProjectThumbnail({ live, code }: Props) {
   const url = live !== "#" ? live : code !== "#" ? code : null;
-  const [src, setSrc] = useState<string | null | "loading">("loading");
+  const [src, setSrc] = useState<string | null>(null);
+  const [loaded, setLoaded] = useState(false);
   const [failed, setFailed] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const fetched = useRef(false);
@@ -26,8 +27,8 @@ export function ProjectThumbnail({ live, code }: Props) {
         obs.disconnect();
         fetch(`/api/og-preview?url=${encodeURIComponent(url)}`)
           .then((r) => r.json())
-          .then((d) => setSrc(d.image ?? null))
-          .catch(() => setSrc(null));
+          .then((d) => { if (d.image) setSrc(d.image); else setFailed(true); })
+          .catch(() => setFailed(true));
       },
       { rootMargin: "200px" }
     );
@@ -40,16 +41,19 @@ export function ProjectThumbnail({ live, code }: Props) {
   return (
     <div
       ref={ref}
-      className="hidden lg:block shrink-0 w-[200px] h-[120px] rounded-lg border border-border overflow-hidden bg-surface"
+      className="hidden lg:flex shrink-0 w-[200px] h-[120px] rounded-lg border border-border overflow-hidden bg-surface relative"
     >
-      {src === "loading" || src === null ? (
-        <div className="w-full h-full bg-surface animate-pulse" />
-      ) : (
+      {/* Skeleton — always present behind the image until it loads */}
+      {!loaded && (
+        <div className="absolute inset-0 bg-surface animate-pulse" />
+      )}
+
+      {src && (
         <img
           src={src}
           alt=""
-          className="w-full h-full object-cover object-top opacity-0 transition-opacity duration-500"
-          onLoad={(e) => ((e.target as HTMLImageElement).style.opacity = "1")}
+          className={`absolute inset-0 w-full h-full object-cover object-top transition-opacity duration-500 ${loaded ? "opacity-100" : "opacity-0"}`}
+          onLoad={() => setLoaded(true)}
           onError={() => setFailed(true)}
         />
       )}
