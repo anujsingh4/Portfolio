@@ -5,6 +5,7 @@ import {
   useContext,
   useState,
   useEffect,
+  useRef,
   useCallback,
   ReactNode,
 } from "react";
@@ -36,17 +37,13 @@ const EditContext = createContext<EditContextType>({
   setResumeUrl: () => {},
 });
 
-function save(data: SiteData) {
-  try {
-    localStorage.setItem("portfolio-data", JSON.stringify(data));
-  } catch {}
-}
-
-// Migrate old data that might be missing id/pinned fields
-function migrate(data: SiteData): SiteData {
+// Migrate old data missing id/pinned/resumeUrl fields
+function migrate(d: SiteData): SiteData {
   return {
-    ...data,
-    projects: data.projects.map((p: ProjectData, i: number) => ({
+    ...defaultData,
+    ...d,
+    resumeUrl: d.resumeUrl ?? "",
+    projects: (d.projects ?? []).map((p: ProjectData, i: number) => ({
       ...p,
       id: p.id || `project-${Date.now()}-${i}`,
       pinned: p.pinned ?? i < 3,
@@ -54,21 +51,63 @@ function migrate(data: SiteData): SiteData {
   };
 }
 
+function saveLocal(data: SiteData) {
+  try { localStorage.setItem("portfolio-data", JSON.stringify(data)); } catch {}
+}
+
+async function saveRemote(data: SiteData) {
+  try {
+    await fetch("/api/portfolio", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+  } catch {}
+}
+
 export function EditProvider({ children }: { children: ReactNode }) {
   const [data, setData] = useState<SiteData>(defaultData);
   const [isEditing, setIsEditing] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Load: Supabase first, fallback to localStorage
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem("portfolio-data");
-      if (saved) setData(migrate(JSON.parse(saved)));
-    } catch {}
+    async function load() {
+      try {
+        const res = await fetch("/api/portfolio");
+        if (res.ok) {
+          const remote = await res.json();
+          if (remote && remote.hero) {
+            const migrated = migrate(remote);
+            setData(migrated);
+            saveLocal(migrated);
+            return;
+          }
+        }
+      } catch {}
+      // Fallback to localStorage
+      try {
+        const saved = localStorage.getItem("portfolio-data");
+        if (saved) {
+          const migrated = migrate(JSON.parse(saved));
+          setData(migrated);
+          // Push local data up to Supabase
+          saveRemote(migrated);
+        }
+      } catch {}
+    }
+    load();
+  }, []);
+
+  // Debounced save: localStorage immediately, Supabase after 1s idle
+  const save = useCallback((next: SiteData) => {
+    saveLocal(next);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => saveRemote(next), 1000);
   }, []);
 
   const toggleEdit = useCallback(() => {
-    if (document.activeElement instanceof HTMLElement) {
-      document.activeElement.blur();
-    }
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
     setIsEditing((e) => !e);
   }, []);
 
@@ -84,7 +123,7 @@ export function EditProvider({ children }: { children: ReactNode }) {
       save(next);
       return next as SiteData;
     });
-  }, []);
+  }, [save]);
 
   const togglePin = useCallback((id: string) => {
     setData((prev) => {
@@ -92,12 +131,12 @@ export function EditProvider({ children }: { children: ReactNode }) {
       const project = next.projects.find((p) => p.id === id);
       if (!project) return prev;
       const pinnedCount = next.projects.filter((p) => p.pinned).length;
-      if (!project.pinned && pinnedCount >= 3) return prev; // max 3
+      if (!project.pinned && pinnedCount >= 3) return prev;
       project.pinned = !project.pinned;
       save(next);
       return next;
     });
-  }, []);
+  }, [save]);
 
   const addProject = useCallback(() => {
     setData((prev) => {
@@ -114,7 +153,7 @@ export function EditProvider({ children }: { children: ReactNode }) {
       save(next);
       return next;
     });
-  }, []);
+  }, [save]);
 
   const removeProject = useCallback((id: string) => {
     setData((prev) => {
@@ -123,7 +162,7 @@ export function EditProvider({ children }: { children: ReactNode }) {
       save(next);
       return next;
     });
-  }, []);
+  }, [save]);
 
   const addSkillRow = useCallback(() => {
     setData((prev) => {
@@ -132,7 +171,7 @@ export function EditProvider({ children }: { children: ReactNode }) {
       save(next);
       return next;
     });
-  }, []);
+  }, [save]);
 
   const removeSkillRow = useCallback((index: number) => {
     setData((prev) => {
@@ -141,7 +180,7 @@ export function EditProvider({ children }: { children: ReactNode }) {
       save(next);
       return next;
     });
-  }, []);
+  }, [save]);
 
   const setResumeUrl = useCallback((url: string) => {
     setData((prev) => {
@@ -150,7 +189,7 @@ export function EditProvider({ children }: { children: ReactNode }) {
       save(next);
       return next;
     });
-  }, []);
+  }, [save]);
 
   return (
     <EditContext.Provider
