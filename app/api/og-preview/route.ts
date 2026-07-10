@@ -20,7 +20,13 @@ export async function GET(req: NextRequest) {
     });
     clearTimeout(timeout);
 
-    if (!res.ok) return NextResponse.json({ image: null });
+    if (!res.ok) {
+      // Site unreachable — still return a screenshot fallback
+      return NextResponse.json(
+        { image: `https://image.thum.io/get/width/600/crop/400/noanimate/${url}` },
+        { headers: { "Cache-Control": "public, max-age=86400, s-maxage=86400" } }
+      );
+    }
 
     const html = await res.text();
 
@@ -39,12 +45,21 @@ export async function GET(req: NextRequest) {
       image = `${base.origin}${image}`;
     }
 
+    // No og:image — fall back to a real screenshot via thum.io
+    if (!image) {
+      image = `https://image.thum.io/get/width/600/crop/400/noanimate/${url}`;
+    }
+
     return NextResponse.json({ image }, {
       headers: {
         "Cache-Control": "public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800",
       },
     });
   } catch {
-    return NextResponse.json({ image: null });
+    // Network error — still try thum.io
+    return NextResponse.json(
+      { image: `https://image.thum.io/get/width/600/crop/400/noanimate/${url}` },
+      { headers: { "Cache-Control": "public, max-age=3600, s-maxage=3600" } }
+    );
   }
 }
